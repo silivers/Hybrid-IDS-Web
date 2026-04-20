@@ -81,7 +81,7 @@ if (config.debug) {
     console.log('═══════════════════════════════════════════════');
 }
 
-// 可选：测试后端连接
+// 测试后端连接
 export async function testBackendConnection() {
     try {
         const controller = new AbortController();

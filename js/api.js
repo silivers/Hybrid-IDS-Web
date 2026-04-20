@@ -1,4 +1,4 @@
-// js/api.js - 更新版本
+// js/api.js - 完整修复版本
 import { config, BACKEND_URL, testBackendConnection } from './config.js';
 
 const API_BASE = BACKEND_URL;
@@ -9,7 +9,6 @@ console.log('[API] 初始化, 后端地址:', API_BASE);
 testBackendConnection().then(connected => {
     if (connected) {
         console.log('[API] ✅ 后端连接正常');
-        // 更新页面上的状态显示
         const statusEl = document.getElementById('backend-status');
         if (statusEl) {
             statusEl.innerHTML = '<i class="fas fa-check-circle"></i> 后端已连接';
@@ -101,34 +100,127 @@ export const api = {
     dashboard: { 
         overview: (days = 7) => request(`/dashboard/overview?days=${days}`) 
     },
+    
     alerts: {
         list: (params) => {
-            const query = new URLSearchParams(params).toString();
-            return request(`/alerts?${query}`);
+            // 过滤掉空值参数
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/alerts?${query}` : '/alerts';
+            return request(url);
         },
         detail: (id) => request(`/alerts/${id}`),
         markProcessed: (id, processed = 1) => request(`/alerts/${id}/process?processed=${processed}`, { method: 'PUT' }),
-        batchProcess: (alert_ids, processed = 1) => request('/alerts/batch-process', { method: 'PUT', body: JSON.stringify({ alert_ids, processed }) })
+        batchProcess: (alert_ids, processed = 1) => request('/alerts/batch-process', { 
+            method: 'PUT', 
+            body: JSON.stringify({ alert_ids, processed }) 
+        })
     },
+    
     assets: { 
-        list: (params) => request(`/assets?${new URLSearchParams(params)}`), 
+        list: (params) => {
+            // 过滤掉空值参数
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/assets?${query}` : '/assets';
+            return request(url);
+        }, 
         risk: (ip) => request(`/assets/${encodeURIComponent(ip)}/risk`) 
     },
+    
     rules: { 
-        list: (params) => request(`/rules?${new URLSearchParams(params)}`), 
+        list: (params) => {
+            // 过滤掉空值参数
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/rules?${query}` : '/rules';
+            console.log('[API] 规则列表请求URL:', url);
+            return request(url);
+        }, 
         detail: (sid) => request(`/rules/${sid}`), 
-        toggle: (sid, enabled) => request(`/rules/${sid}/toggle`, { method: 'PUT', body: JSON.stringify({ enabled }) }) 
+        toggle: (sid, enabled) => request(`/rules/${sid}/toggle`, { 
+            method: 'PUT', 
+            body: JSON.stringify({ enabled }) 
+        })
     },
+    
     investigate: { 
-        source: (src_ip, params) => request(`/investigate/source/${encodeURIComponent(src_ip)}?${new URLSearchParams(params)}`), 
-        conversation: (src_ip, dst_ip, params) => request(`/investigate/conversation?src_ip=${src_ip}&dst_ip=${dst_ip}&${new URLSearchParams(params)}`), 
+        source: (src_ip, params) => {
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/investigate/source/${encodeURIComponent(src_ip)}?${query}` : `/investigate/source/${encodeURIComponent(src_ip)}`;
+            return request(url);
+        }, 
+        conversation: (src_ip, dst_ip, params) => {
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/investigate/conversation?src_ip=${src_ip}&dst_ip=${dst_ip}&${query}` : `/investigate/conversation?src_ip=${src_ip}&dst_ip=${dst_ip}`;
+            return request(url);
+        }, 
         asset: (dst_ip) => request(`/investigate/asset/${encodeURIComponent(dst_ip)}`) 
     },
+    
     reports: { 
-        summary: (params) => request(`/reports/summary?${new URLSearchParams(params)}`), 
-        topSources: (params) => request(`/reports/top-sources?${new URLSearchParams(params)}`), 
-        topRules: (params) => request(`/reports/top-rules?${new URLSearchParams(params)}`) 
+        summary: (params) => {
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/reports/summary?${query}` : '/reports/summary';
+            return request(url);
+        }, 
+        topSources: (params) => {
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/reports/top-sources?${query}` : '/reports/top-sources';
+            return request(url);
+        }, 
+        topRules: (params) => {
+            const filteredParams = {};
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== '' && value !== null && value !== undefined) {
+                    filteredParams[key] = value;
+                }
+            }
+            const query = new URLSearchParams(filteredParams).toString();
+            const url = query ? `/reports/top-rules?${query}` : '/reports/top-rules';
+            return request(url);
+        }
     },
+    
     stats: { 
         filterOptions: () => request('/stats/filter-options'),
         classtypes: () => request('/stats/classtypes')
