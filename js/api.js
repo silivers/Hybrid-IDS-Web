@@ -1,4 +1,4 @@
-// js/api.js - 完整修复版（保持功能，代码整洁）
+// js/api.js - 完整修复版（已移除 assets.risk 接口）
 import { config, BACKEND_URL, testBackendConnection } from './config.js';
 
 const API_BASE = BACKEND_URL;
@@ -57,11 +57,26 @@ export const api = {
         markProcessed: (id) => request(`/alerts/${id}/process?processed=1`, { method: 'PUT' }),
         batchProcess: (alert_ids) => request('/alerts/batch-process', { method: 'PUT', body: JSON.stringify({ alert_ids, processed: 1 }) })
     },
-    assets: { list: (params) => request(`/assets?${new URLSearchParams(params)}`), risk: (ip) => request(`/assets/${encodeURIComponent(ip)}/risk`) },
-    rules: { list: (params) => request(`/rules?${new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_,v]) => v != null && v !== '')))}`), detail: (sid) => request(`/rules/${sid}`), toggle: (sid, enabled) => request(`/rules/${sid}/toggle`, { method: 'PUT', body: JSON.stringify({ enabled }) }) },
-    investigate: { source: (src_ip, params) => request(`/investigate/source/${encodeURIComponent(src_ip)}?${new URLSearchParams(params)}`), conversation: (src_ip, dst_ip, params) => request(`/investigate/conversation?src_ip=${src_ip}&dst_ip=${dst_ip}&${new URLSearchParams(params)}`), asset: (dst_ip) => request(`/investigate/asset/${encodeURIComponent(dst_ip)}`) },
-    reports: { summary: (params) => request(`/reports/summary?${new URLSearchParams(params)}`), topSources: (params) => request(`/reports/top-sources?${new URLSearchParams(params)}`), topRules: (params) => request(`/reports/top-rules?${new URLSearchParams(params)}`) },
-    stats: { filterOptions: () => request('/stats/filter-options'), classtypes: () => request('/stats/classtypes') }
+    assets: { list: (params) => request(`/assets?${new URLSearchParams(params)}`) },
+    rules: { 
+        list: (params) => request(`/rules?${new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_,v]) => v != null && v !== '')))}`), 
+        detail: (sid) => request(`/rules/${sid}`), 
+        toggle: (sid, enabled) => request(`/rules/${sid}/toggle`, { method: 'PUT', body: JSON.stringify({ enabled }) }) 
+    },
+    investigate: { 
+        source: (src_ip, params) => request(`/investigate/source/${encodeURIComponent(src_ip)}?${new URLSearchParams(params)}`), 
+        conversation: (src_ip, dst_ip, params) => request(`/investigate/conversation?src_ip=${src_ip}&dst_ip=${dst_ip}&${new URLSearchParams(params)}`), 
+        asset: (dst_ip) => request(`/investigate/asset/${encodeURIComponent(dst_ip)}`) 
+    },
+    reports: { 
+        summary: (params) => request(`/reports/summary?${new URLSearchParams(params)}`), 
+        topSources: (params) => request(`/reports/top-sources?${new URLSearchParams(params)}`), 
+        topRules: (params) => request(`/reports/top-rules?${new URLSearchParams(params)}`) 
+    },
+    stats: { 
+        filterOptions: () => request('/stats/filter-options'), 
+        classtypes: () => request('/stats/classtypes') 
+    }
 };
 
 window.api = api;
