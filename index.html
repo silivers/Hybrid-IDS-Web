@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混合入侵检测系统 | Hybrid IDS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🛡️ Hybrid IDS</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" data-view="dashboard" class="nav-item active">
+                    <span class="icon">📊</span> 仪表盘
+                </a>
+                <a href="#" data-view="alerts" class="nav-item">
+                    <span class="icon">⚠️</span> 告警管理
+                </a>
+                <a href="#" data-view="assets" class="nav-item">
+                    <span class="icon">💻</span> 资产管理
+                </a>
+                <a href="#" data-view="rules" class="nav-item">
+                    <span class="icon">📜</span> 规则管理
+                </a>
+                <a href="#" data-view="reports" class="nav-item">
+                    <span class="icon">📈</span> 报表中心
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="header">
+                <h1 id="page-title">仪表盘</h1>
+                <div class="header-info">
+                    <span id="current-time"></span>
+                </div>
+            </header>
+            <div id="view-container" class="view-container">
+                <!-- 动态加载视图 -->
+                <div class="loading">加载中...</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 全局脚本 -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/dashboard.js"></script>
+    <script src="js/components/alerts.js"></script>
+    <script src="js/components/assets.js"></script>
+    <script src="js/components/rules.js"></script>
+    <script src="js/components/reports.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
