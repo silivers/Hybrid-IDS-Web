@@ -1,14 +1,20 @@
-const API_BASE = '/api';  // 可配置代理地址
+// js/api.js
+import { config } from './config.js';
+
+const API_BASE = config.backendUrl;
+
+console.log('[API] 后端地址:', API_BASE);
 
 // 全局错误处理
 export const ErrorHandler = {
     listeners: [],
     onError(callback) { this.listeners.push(callback); },
     emit(error) { this.listeners.forEach(fn => fn(error)); },
-    async handleResponse(response) {
+    async handleResponse(response, url) {
         if (!response.ok) {
             const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
             error.status = response.status;
+            error.url = url;
             this.emit(error);
             throw error;
         }
@@ -25,14 +31,29 @@ export const ErrorHandler = {
 };
 
 async function request(endpoint, options = {}) {
+    const url = `${API_BASE}${endpoint}`;
+    console.log(`[API] 请求: ${options.method || 'GET'} ${url}`);
     try {
-        const res = await fetch(`${API_BASE}${endpoint}`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), config.timeout || 30000);
+        
+        const res = await fetch(url, {
             headers: { 'Content-Type': 'application/json', ...options.headers },
+            signal: controller.signal,
             ...options
         });
-        return await ErrorHandler.handleResponse(res);
+        clearTimeout(timeoutId);
+        return await ErrorHandler.handleResponse(res, url);
     } catch (error) {
         console.error(`[API Error] ${endpoint}:`, error);
+        if (error.name === 'AbortError') {
+            const timeoutError = new Error(`请求超时: ${url}`);
+            ErrorHandler.emit(timeoutError);
+        } else if (error.message.includes('Failed to fetch')) {
+            const networkError = new Error(`无法连接到后端服务！\n请确保:\n1. 后端已启动: cd Hybrid-IDS-Backend && sudo python main.py\n2. 后端地址正确: ${API_BASE}\n3. 防火墙允许8000端口`);
+            networkError.status = 0;
+            ErrorHandler.emit(networkError);
+        }
         throw error;
     }
 }
