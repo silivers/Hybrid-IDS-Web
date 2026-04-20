@@ -1,9 +1,31 @@
-// js/api.js
-import { config } from './config.js';
+// js/api.js - 更新版本
+import { config, BACKEND_URL, testBackendConnection } from './config.js';
 
-const API_BASE = config.backendUrl;
+const API_BASE = BACKEND_URL;
 
-console.log('[API] 后端地址:', API_BASE);
+console.log('[API] 初始化, 后端地址:', API_BASE);
+
+// 测试后端连接（可选，会输出到控制台）
+testBackendConnection().then(connected => {
+    if (connected) {
+        console.log('[API] ✅ 后端连接正常');
+        // 更新页面上的状态显示
+        const statusEl = document.getElementById('backend-status');
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> 后端已连接';
+            statusEl.style.background = '#1a3a2a';
+            statusEl.style.color = '#2ecc71';
+        }
+    } else {
+        console.log('[API] ❌ 后端连接失败');
+        const statusEl = document.getElementById('backend-status');
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 后端离线';
+            statusEl.style.background = '#3a1a1a';
+            statusEl.style.color = '#ff6b6b';
+        }
+    }
+});
 
 // 全局错误处理
 export const ErrorHandler = {
@@ -31,11 +53,17 @@ export const ErrorHandler = {
 };
 
 async function request(endpoint, options = {}) {
-    const url = `${API_BASE}${endpoint}`;
-    console.log(`[API] 请求: ${options.method || 'GET'} ${url}`);
+    // 确保 endpoint 以 / 开头
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${API_BASE}${cleanEndpoint}`;
+    
+    if (config.debug) {
+        console.log(`[API] 请求: ${options.method || 'GET'} ${url}`);
+    }
+    
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), config.timeout || 30000);
+        const timeoutId = setTimeout(() => controller.abort(), config.timeout);
         
         const res = await fetch(url, {
             headers: { 'Content-Type': 'application/json', ...options.headers },
@@ -46,11 +74,19 @@ async function request(endpoint, options = {}) {
         return await ErrorHandler.handleResponse(res, url);
     } catch (error) {
         console.error(`[API Error] ${endpoint}:`, error);
+        
         if (error.name === 'AbortError') {
-            const timeoutError = new Error(`请求超时: ${url}`);
+            const timeoutError = new Error(`请求超时 (${config.timeout/1000}s): ${url}`);
             ErrorHandler.emit(timeoutError);
-        } else if (error.message.includes('Failed to fetch')) {
-            const networkError = new Error(`无法连接到后端服务！\n请确保:\n1. 后端已启动: cd Hybrid-IDS-Backend && sudo python main.py\n2. 后端地址正确: ${API_BASE}\n3. 防火墙允许8000端口`);
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            const networkError = new Error(
+                `无法连接到后端服务！\n` +
+                `后端地址: ${API_BASE}\n` +
+                `请确保:\n` +
+                `1. 后端已启动: cd Hybrid-IDS-Backend && sudo python main.py\n` +
+                `2. 后端端口8000已开放\n` +
+                `3. 防火墙允许: sudo ufw allow 8000`
+            );
             networkError.status = 0;
             ErrorHandler.emit(networkError);
         }
@@ -59,7 +95,12 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-    dashboard: { overview: (days = 7) => request(`/dashboard/overview?days=${days}`) },
+    // 获取后端地址（用于调试）
+    getBackendUrl: () => API_BASE,
+    
+    dashboard: { 
+        overview: (days = 7) => request(`/dashboard/overview?days=${days}`) 
+    },
     alerts: {
         list: (params) => {
             const query = new URLSearchParams(params).toString();
@@ -94,5 +135,9 @@ export const api = {
     }
 };
 
+// 导出后端地址供其他模块使用
+export const backendUrl = API_BASE;
+
+// 挂载到 window 以便调试
 window.api = api;
 window.ErrorHandler = ErrorHandler;
