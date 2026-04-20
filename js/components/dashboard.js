@@ -1,19 +1,11 @@
-// js/components/dashboard.js - 美化版
+// js/components/dashboard.js - 移除告警趋势模块后
 import { api } from '../api.js';
 import { showToast } from '../utils.js';
 
 export async function renderDashboard(container) {
     try {
         const data = await api.dashboard.overview(7);
-        const { metrics, trend, severity_distribution, top_stats } = data;
-        
-        let trendData = [];
-        if (trend) {
-            if (Array.isArray(trend)) trendData = trend;
-            else if (trend.last_24h) trendData = trend.last_24h;
-            else if (trend.last_7d) trendData = trend.last_7d;
-            else trendData = Object.values(trend).flat() || [];
-        }
+        const { metrics, severity_distribution, top_stats } = data;
         
         const totalAlerts = metrics?.total_alerts || 0;
         const highSeverity = metrics?.high_severity || metrics?.high_severity_count || 0;
@@ -32,7 +24,6 @@ export async function renderDashboard(container) {
                 <div class="stat-card"><div class="stat-title"><i class="fas fa-server"></i> 受影响资产</div><div class="stat-value">${affectedAssets}</div></div>
             </div>
             <div class="chart-row">
-                <div class="chart-card"><h3><i class="fas fa-chart-line"></i> 告警趋势 (近24小时)</h3><canvas id="trendChart" height="200"></canvas>${trendData.length === 0 ? '<div class="empty-state">暂无趋势数据</div>' : ''}</div>
                 <div class="chart-card"><h3><i class="fas fa-chart-pie"></i> 严重程度分布</h3><canvas id="severityChart" height="200"></canvas></div>
             </div>
             <div class="chart-row">
@@ -46,15 +37,6 @@ export async function renderDashboard(container) {
         `;
         container.innerHTML = html;
         
-        // 趋势图
-        const trendCanvas = document.getElementById('trendChart');
-        if (trendCanvas && trendData.length > 0) {
-            const ctx = trendCanvas.getContext('2d');
-            const labels = trendData.map(t => t.time_bucket || t.date || t.time_slot || t.hour || '');
-            const counts = trendData.map(t => t.count || 0);
-            new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: '告警数', data: counts, borderColor: '#4f9eff', backgroundColor: 'rgba(79,158,255,0.1)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#b8c7e7' } } }, scales: { x: { ticks: { color: '#8ba3c9', maxRotation: 45 } }, y: { ticks: { color: '#8ba3c9' } } } } });
-        }
-        
         // 严重程度图
         const sevCanvas = document.getElementById('severityChart');
         if (sevCanvas && severityData.length > 0) {
@@ -66,7 +48,7 @@ export async function renderDashboard(container) {
         
         const renderTable = (data, columns) => {
             if (!data?.length) return '<div class="empty-state" style="padding:40px;text-align:center;">暂无数据</div>';
-            return `<table><thead><tr>${columns.map(c => `<th>${c.title}</th>`).join('')}</tr></thead><tbody>${data.map(item => `<tr>${columns.map(c => `<td title="${item[c.key] || '-'}">${String(item[c.key] || '-').substring(0, 50)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+            return `<table><thead><tr>${columns.map(c => `<th>${c.title}</th>`).join('')}</tr></thead><tbody>${data.map(item => `<tr>${columns.map(c => `<td title="${item[c.key] || '-'}">${String(item[c.key] || '-').substring(0, 50)}</td>`).join('')}</tr>`).join('')}</tbody>}</table>`;
         };
         
         const srcContainer = document.getElementById('srcTable');
