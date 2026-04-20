@@ -1,4 +1,5 @@
-import { api } from './api.js';
+import { api, ErrorHandler } from './api.js';
+import { showToast } from './utils.js';
 import { renderDashboard } from './components/dashboard.js';
 import { renderAlerts } from './components/alerts.js';
 import { renderAssets } from './components/assets.js';
@@ -9,6 +10,17 @@ import { renderInvestigate } from './components/investigate.js';
 let currentView = 'dashboard';
 const container = document.getElementById('view-container');
 const pageTitle = document.getElementById('page-title');
+
+// 注册全局错误处理
+ErrorHandler.onError((error) => {
+    let message = error.message;
+    if (error.status === 404) message = '请求的资源不存在，请检查API地址';
+    if (error.status === 500) message = '服务器内部错误，请稍后重试';
+    if (error.status === 400) message = '请求参数错误：' + (error.details || message);
+    if (error.code === 404) message = '数据不存在';
+    showToast(message, 'error');
+    console.error('[Global Error]', error);
+});
 
 const views = {
     dashboard: { title: '仪表盘', render: () => renderDashboard(container) },
@@ -22,10 +34,29 @@ const views = {
 async function loadView(view) {
     currentView = view;
     pageTitle.innerText = views[view]?.title || '仪表盘';
-    container.innerHTML = '<div class="loading-spinner">加载中...</div>';
-    try { await views[view].render(); } catch(e) { container.innerHTML = `<div class="error">加载失败: ${e.message}</div>`; }
-    document.querySelectorAll('.nav-item').forEach(item => { if(item.dataset.view === view) item.classList.add('active'); else item.classList.remove('active'); });
+    container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+    try { 
+        await views[view].render(); 
+    } catch(e) { 
+        console.error(`[View Error] ${view}:`, e);
+        container.innerHTML = `<div class="error-container" style="text-align:center;padding:60px;">
+            <i class="fas fa-exclamation-triangle" style="font-size:48px;color:#ff6b6b;margin-bottom:20px;"></i>
+            <h3>加载失败</h3>
+            <p>${e.message || '未知错误，请检查控制台'}</p>
+            <button class="btn btn-primary" onclick="location.reload()">刷新页面</button>
+        </div>`; 
+    }
+    document.querySelectorAll('.nav-item').forEach(item => { 
+        if(item.dataset.view === view) item.classList.add('active'); 
+        else item.classList.remove('active'); 
+    });
 }
 
-document.querySelectorAll('.nav-item').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); loadView(link.dataset.view); }); });
+document.querySelectorAll('.nav-item').forEach(link => { 
+    link.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        loadView(link.dataset.view); 
+    }); 
+});
+
 loadView('dashboard');
