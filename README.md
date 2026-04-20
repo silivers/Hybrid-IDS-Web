@@ -10,21 +10,23 @@
 
 ## 项目结构
 
-ids-frontend/
-├── index.html              # 主入口页面
-├── css/
-│   └── style.css          # 全局样式
-├── js/
-│   ├── app.js             # 应用主控制器
-│   ├── api.js             # API请求封装
-│   ├── utils.js           # 工具函数
-│   └── components/        # 视图组件
-│       ├── dashboard.js   # 仪表盘组件
-│       ├── alerts.js      # 告警管理组件
-│       ├── assets.js      # 资产管理组件
-│       ├── rules.js       # 规则管理组件
-│       └── reports.js     # 报表组件
-└── assets/                # 静态资源目录
+| 目录/文件 | 说明 |
+| --- | --- |
+| ids-frontend/ | 项目根目录 |
+| ids-frontend/index.html | 主入口页面 |
+| ids-frontend/css/ | 样式目录 |
+| ids-frontend/css/style.css | 全局样式 |
+| ids-frontend/js/ | 脚本目录 |
+| ids-frontend/js/app.js | 应用主控制器 |
+| ids-frontend/js/api.js | API请求封装 |
+| ids-frontend/js/utils.js | 工具函数 |
+| ids-frontend/js/components/ | 视图组件目录 |
+| ids-frontend/js/components/dashboard.js | 仪表盘组件 |
+| ids-frontend/js/components/alerts.js | 告警管理组件 |
+| ids-frontend/js/components/assets.js | 资产管理组件 |
+| ids-frontend/js/components/rules.js | 规则管理组件 |
+| ids-frontend/js/components/reports.js | 报表组件 |
+| ids-frontend/assets/ | 静态资源目录 |
 
 ## 功能模块
 
