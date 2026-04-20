@@ -1,65 +1,31 @@
-// 应用主控制器
-class App {
-    constructor() {
-        this.currentView = 'dashboard';
-        this.components = {
-            dashboard: DashboardComponent,
-            alerts: AlertsComponent,
-            assets: AssetsComponent,
-            rules: RulesComponent,
-            reports: ReportsComponent
-        };
-        this.init();
-    }
+import { api } from './api.js';
+import { renderDashboard } from './components/dashboard.js';
+import { renderAlerts } from './components/alerts.js';
+import { renderAssets } from './components/assets.js';
+import { renderRules } from './components/rules.js';
+import { renderReports } from './components/reports.js';
+import { renderInvestigate } from './components/investigate.js';
 
-    init() {
-        this.bindNavigation();
-        this.loadView('dashboard');
-    }
+let currentView = 'dashboard';
+const container = document.getElementById('view-container');
+const pageTitle = document.getElementById('page-title');
 
-    bindNavigation() {
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const view = item.dataset.view;
-                if (view) {
-                    this.loadView(view);
-                    this.setActiveNav(item);
-                }
-            });
-        });
-    }
+const views = {
+    dashboard: { title: '仪表盘', render: () => renderDashboard(container) },
+    alerts: { title: '告警管理', render: () => renderAlerts(container) },
+    assets: { title: '资产管理', render: () => renderAssets(container) },
+    rules: { title: '规则管理', render: () => renderRules(container) },
+    reports: { title: '报表与合规', render: () => renderReports(container) },
+    investigate: { title: '事件调查与溯源', render: () => renderInvestigate(container) }
+};
 
-    setActiveNav(activeItem) {
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        activeItem.classList.add('active');
-        const title = activeItem.querySelector('span:last-child')?.textContent || activeItem.dataset.view;
-        document.getElementById('page-title').textContent = title;
-    }
-
-    async loadView(viewName) {
-        this.currentView = viewName;
-        const container = document.getElementById('view-container');
-        container.innerHTML = '<div class="loading">加载中...</div>';
-        
-        try {
-            const Component = this.components[viewName];
-            if (Component) {
-                await Component.render(container);
-            } else {
-                container.innerHTML = '<div class="card">页面不存在</div>';
-            }
-        } catch (error) {
-            console.error('加载视图失败:', error);
-            container.innerHTML = '<div class="card">加载失败，请刷新重试</div>';
-        }
-    }
+async function loadView(view) {
+    currentView = view;
+    pageTitle.innerText = views[view]?.title || '仪表盘';
+    container.innerHTML = '<div class="loading-spinner">加载中...</div>';
+    try { await views[view].render(); } catch(e) { container.innerHTML = `<div class="error">加载失败: ${e.message}</div>`; }
+    document.querySelectorAll('.nav-item').forEach(item => { if(item.dataset.view === view) item.classList.add('active'); else item.classList.remove('active'); });
 }
 
-// 启动应用
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new App();
-});
+document.querySelectorAll('.nav-item').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); loadView(link.dataset.view); }); });
+loadView('dashboard');
