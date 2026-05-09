@@ -9,6 +9,7 @@ import { renderRules } from './components/rules.js';
 import { renderReports } from './components/reports.js';
 import { renderInvestigate } from './components/investigate.js';
 
+
 let currentView = 'dashboard';
 const container = document.getElementById('view-container');
 const pageTitle = document.getElementById('page-title');

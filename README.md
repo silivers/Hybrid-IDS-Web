@@ -4,6 +4,11 @@
 
 本项目是一个基于Snort规则库和机器学习模型的混合入侵检测系统(Hybrid IDS)的前端可视化平台，提供实时的网络安全态势感知、告警管理、事件溯源、资产风险分析等核心功能。
 
+## 其余依赖
+- [后端](https://github.com/silivers/Hybrid-IDS-Backend)
+- [数据库](https://github.com/silivers/Hybrid-IDS-Rules)
+- [检测模型(后端已自带成品)](https://github.com/silivers/Hybrid-IDS-ML-Trainer)
+
 ## 技术栈
 
 - 前端框架: 原生JavaScript (ES6+)
@@ -15,22 +20,22 @@
 
 | 目录/文件 | 说明 |
 |---------|------|
-| ids-frontend/ | 项目根目录 |
-| ids-frontend/index.html | 主入口页面 |
-| ids-frontend/css/ | 样式目录 |
-| ids-frontend/css/style.css | 全局样式 |
-| ids-frontend/js/ | 脚本目录 |
-| ids-frontend/js/app.js | 应用主控制器 |
-| ids-frontend/js/api.js | API请求封装 |
-| ids-frontend/js/config.js | 配置管理 |
-| ids-frontend/js/utils.js | 工具函数 |
-| ids-frontend/js/components/ | 视图组件目录 |
-| ids-frontend/js/components/dashboard.js | 仪表盘组件 |
-| ids-frontend/js/components/alerts.js | 告警管理组件 |
-| ids-frontend/js/components/assets.js | 资产管理组件 |
-| ids-frontend/js/components/rules.js | 规则管理组件 |
-| ids-frontend/js/components/reports.js | 报表组件 |
-| ids-frontend/js/components/investigate.js | 事件调查组件 |
+| Hybrid-IDS-Web/ | 项目根目录 |
+| Hybrid-IDS-Web/index.html | 主入口页面 |
+| Hybrid-IDS-Web/css/ | 样式目录 |
+| Hybrid-IDS-Web/css/style.css | 全局样式 |
+| Hybrid-IDS-Web/js/ | 脚本目录 |
+| Hybrid-IDS-Web/js/app.js | 应用主控制器 |
+| Hybrid-IDS-Web/js/api.js | API请求封装 |
+| Hybrid-IDS-Web/js/config.js | 配置管理 |
+| Hybrid-IDS-Web/js/utils.js | 工具函数 |
+| Hybrid-IDS-Web/js/components/ | 视图组件目录 |
+| Hybrid-IDS-Web/js/components/dashboard.js | 仪表盘组件 |
+| Hybrid-IDS-Web/js/components/alerts.js | 告警管理组件 |
+| Hybrid-IDS-Web/js/components/assets.js | 资产管理组件 |
+| Hybrid-IDS-Web/js/components/rules.js | 规则管理组件 |
+| Hybrid-IDS-Web/js/components/reports.js | 报表组件 |
+| Hybrid-IDS-Web/js/components/investigate.js | 事件调查组件 |
 
 ## 功能模块
 
@@ -89,7 +94,7 @@
 1. 克隆项目到Web服务器目录
 
 git clone <repository-url>
-cd Hybrid-IDS-Frontend
+cd Hybrid-Hybrid-IDS-Web
 
 2. 配置后端地址
 
@@ -117,6 +122,127 @@ sudo python main.py
 5. 访问系统
 
 http://localhost:3000
+
+
+## Docker 部署
+
+### 方式一：使用 Docker 命令
+
+1. **构建镜像**
+
+```bash
+docker build -t hybrid-ids-web .
+```
+2. **运行容器**
+```bash
+docker run -d -p 3000:3000 --name hybrid-ids-web hybrid-ids-web
+```
+### 方式二：使用 Docker-compose一键部署本项目
+
+| 目录/文件 | 说明 |
+|-----------|------|
+| docker-compose.yml | docker-compose文件位置 |
+| Hybrid-IDS-Backend | 后端服务目录 |
+| Hybrid-IDS-ML-Trainer | 机器学习训练器目录 |
+| Hybrid-IDS-Rules | Snort规则目录 |
+| Hybrid-IDS-Web | 前端Web目录 |
+
+**docker-compose.yml**
+```bash
+networks:
+  hybrid-ids-network:
+    driver: bridge
+#数据库
+services:
+  mysql:
+    image: mariadb:10.11
+    container_name: hybrid-ids-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: snort_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - hybrid-ids-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p1234"]
+      timeout: 10s
+      retries: 10
+      interval: 10s
+      start_period: 30s
+#规则导入
+  snort-importer:
+    build:
+      context: ./Hybrid-IDS-Rules
+      dockerfile: dockerfile
+    container_name: hybrid-ids-importer
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: 1234
+      DB_NAME: snort_db
+    volumes:
+      - ./Hybrid-IDS-Rules/snort3-community.rules:/app/snort3-community.rules:ro
+    networks:
+      - hybrid-ids-network
+#后端服务
+  backend:
+    build:                          
+      context: ./Hybrid-IDS-Backend
+      dockerfile: Dockerfile
+    container_name: hybrid-ids-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: 1234
+      DB_NAME: snort_db
+    ports:
+      - "8000:8000"
+    networks:
+      - hybrid-ids-network
+
+  # 前端服务 
+  frontend:
+    build:
+      context: ./Hybrid-IDS-Web
+      dockerfile: Dockerfile
+    container_name: hybrid-ids-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  
+    networks:
+      - hybrid-ids-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+      start_period: 10s
+
+volumes:
+  mysql-data:
+```
+**一键部署启动**
+```bash
+docker-compose up -d
+```
+**访问**
+```bash
+http://localhost:3000/
+```
 
 ## API接口说明
 
@@ -158,21 +284,3 @@ export const config = {
 ## 跨域问题
 
 如果前端和后端分离部署，需要确保后端支持CORS。后端已配置允许跨域访问。
-
-
-## 开发调试
-
-开启调试模式：
-在 config.js 中设置 debug: true
-
-调试信息将输出到浏览器控制台。
-
-手动测试后端连接：
-在浏览器控制台执行 window.appConfig.testBackend()
-
-查看API请求：
-所有API请求都会在控制台输出，便于调试。
-
-## 注意事项
-
-本前端项目需要配合Hybrid-IDS-Backend后端服务使用，请确保后端服务正常运行后再访问前端页面。
